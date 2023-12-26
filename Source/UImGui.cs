@@ -121,6 +121,16 @@ namespace UImGui
 			_isChangingCamera = true;
 		}
 
+		public void SetRenderFeature(RenderImGui renderFeature) {
+  			if (renderFeature == null) {
+				enabled = false;
+				throw new System.Exception("Fail: Render feature is null.");
+			}
+
+   			_renderFeature = renderFeature;
+      			_isChangingCamera = true;
+  		}
+
 		private void Awake()
 		{
 			_context = UImGuiUtility.CreateContext();
