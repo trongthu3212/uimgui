@@ -1,3 +1,4 @@
+using System.Collections;
 using ImGuiNET;
 using UImGui.Assets;
 using UImGui.Events;
@@ -22,6 +23,9 @@ namespace UImGui
 
 		[SerializeField]
 		private RenderImGui _renderFeature = null;
+
+		[SerializeField]
+		private bool _drawOnTopOverlay = true;
 
 		[SerializeField]
 		private RenderType _rendererType = RenderType.Mesh;
@@ -82,6 +86,8 @@ namespace UImGui
 
 		private bool _isChangingCamera = false;
 
+		private Coroutine injectCommandBufferToOverlayCoroutine;
+
 		public CommandBuffer CommandBuffer => _renderCommandBuffer;
 
 		#region Events
@@ -128,7 +134,7 @@ namespace UImGui
 			}
 
    			_renderFeature = renderFeature;
-      			_isChangingCamera = true;
+      		_isChangingCamera = true;
   		}
 
 		private void Awake()
@@ -149,28 +155,41 @@ namespace UImGui
 				throw new System.Exception($"Failed to start: {reason}.");
 			}
 
-			if (_camera == null)
+			if (!_drawOnTopOverlay && _camera == null)
 			{
 				Fail(nameof(_camera));
 			}
 
-			if (_renderFeature == null && RenderUtility.IsUsingURP())
+			if (!_drawOnTopOverlay && _renderFeature == null && RenderUtility.IsUsingURP())
 			{
 				Fail(nameof(_renderFeature));
 			}
 
 			_renderCommandBuffer = RenderUtility.GetCommandBuffer(Constants.UImGuiCommandBuffer);
 
-			if (RenderUtility.IsUsingURP())
+			if (!_drawOnTopOverlay)
 			{
+				if (RenderUtility.IsUsingURP())
+				{
 #if HAS_URP
-				_renderFeature.Camera = _camera;
+					_renderFeature.Camera = _camera;
 #endif
-				_renderFeature.CommandBuffer = _renderCommandBuffer;
+					_renderFeature.CommandBuffer = _renderCommandBuffer;
+				}
+				else if (!RenderUtility.IsUsingHDRP())
+				{
+					_camera.AddCommandBuffer(CameraEvent.AfterEverything, _renderCommandBuffer);
+				}
 			}
-			else if (!RenderUtility.IsUsingHDRP())
+			else
 			{
-				_camera.AddCommandBuffer(CameraEvent.AfterEverything, _renderCommandBuffer);
+				if (injectCommandBufferToOverlayCoroutine != null)
+				{
+					StopCoroutine(injectCommandBufferToOverlayCoroutine);
+					injectCommandBufferToOverlayCoroutine = null;
+				}
+
+				injectCommandBufferToOverlayCoroutine = StartCoroutine(InjectCommandBufferToOverlay());
 			}
 
 			UImGuiUtility.SetCurrentContext(_context);
@@ -216,21 +235,32 @@ namespace UImGui
 			_context.TextureManager.Shutdown();
 			_context.TextureManager.DestroyFontAtlas(io);
 
-			if (RenderUtility.IsUsingURP())
+			if (!_drawOnTopOverlay)
 			{
-				if (_renderFeature != null)
+				if (RenderUtility.IsUsingURP())
 				{
+					if (_renderFeature != null)
+					{
 #if HAS_URP
-					_renderFeature.Camera = null;
+						_renderFeature.Camera = null;
 #endif
-					_renderFeature.CommandBuffer = null;
+						_renderFeature.CommandBuffer = null;
+					}
+				}
+				else if (!RenderUtility.IsUsingHDRP())
+				{
+					if (_camera != null)
+					{
+						_camera.RemoveCommandBuffer(CameraEvent.AfterEverything, _renderCommandBuffer);
+					}
 				}
 			}
-			else if(!RenderUtility.IsUsingHDRP())
+			else
 			{
-				if (_camera != null)
+				if (injectCommandBufferToOverlayCoroutine != null)
 				{
-					_camera.RemoveCommandBuffer(CameraEvent.AfterEverything, _renderCommandBuffer);
+					StopCoroutine(injectCommandBufferToOverlayCoroutine);
+					injectCommandBufferToOverlayCoroutine = null;
 				}
 			}
 
@@ -309,6 +339,16 @@ namespace UImGui
 			_platform?.Shutdown(io);
 			_platform = platform;
 			_platform?.Initialize(io, _initialConfiguration, "Unity " + _platformType.ToString());
+		}
+
+		private IEnumerator InjectCommandBufferToOverlay()
+		{
+			while (true)
+			{
+				yield return new WaitForEndOfFrame();
+
+				Graphics.ExecuteCommandBuffer(_renderCommandBuffer);
+			}
 		}
 	}
 }
