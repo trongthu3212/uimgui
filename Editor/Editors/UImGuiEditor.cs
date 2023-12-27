@@ -11,6 +11,7 @@ namespace UImGui.Editor
 	internal class UImGuiEditor : UnityEditor.Editor
 	{
 		private SerializedProperty _doGlobalEvents;
+		private SerializedProperty _displayOnTopOverlay;
 		private SerializedProperty _camera;
 		private SerializedProperty _renderFeature;
 		private SerializedProperty _renderer;
@@ -37,12 +38,18 @@ namespace UImGui.Editor
 			EditorGUI.BeginChangeCheck();
 
 			EditorGUILayout.PropertyField(_doGlobalEvents);
-			if (RenderUtility.IsUsingURP())
-			{
-				EditorGUILayout.PropertyField(_renderFeature);
-			}
+			EditorGUILayout.PropertyField(_displayOnTopOverlay);
 
 			EditorGUILayout.PropertyField(_camera);
+
+			if (!_displayOnTopOverlay.boolValue)
+			{
+				if (RenderUtility.IsUsingURP())
+				{
+					EditorGUILayout.PropertyField(_renderFeature);
+				}
+			}
+
 			EditorGUILayout.PropertyField(_renderer);
 			EditorGUILayout.PropertyField(_platform);
 			EditorGUILayout.PropertyField(_initialConfiguration);
@@ -82,6 +89,7 @@ namespace UImGui.Editor
 			_shaders = serializedObject.FindProperty("_shaders");
 			_style = serializedObject.FindProperty("_style");
 			_cursorShapes = serializedObject.FindProperty("_cursorShapes");
+			_displayOnTopOverlay = serializedObject.FindProperty("_drawOnTopOverlay");
 
 #if UIMGUI_REMOVE_IMNODES
 			usingImNodes = false;
@@ -108,14 +116,18 @@ namespace UImGui.Editor
 			EditorGUILayout.Space();
 
 			_messages.Clear();
+
 			if (_camera.objectReferenceValue == null)
 			{
 				_messages.AppendLine("Must assign a Camera.");
 			}
 
-			if (RenderUtility.IsUsingURP() && _renderFeature.objectReferenceValue == null)
+			if (!_displayOnTopOverlay.boolValue)
 			{
-				_messages.AppendLine("Must assign a RenderFeature when using the URP.");
+				if (RenderUtility.IsUsingURP() && _renderFeature.objectReferenceValue == null)
+				{
+					_messages.AppendLine("Must assign a RenderFeature when using the URP.");
+				}
 			}
 
 #if !UNITY_2020_1_OR_NEWER
