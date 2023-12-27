@@ -1,6 +1,7 @@
-﻿using ImGuiNET;
+using ImGuiNET;
 using UImGui.Assets;
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace UImGui.Platform
 {
@@ -20,7 +21,7 @@ namespace UImGui.Platform
 	{
 		private readonly Event _textInputEvent = new Event();
 
-		private int[] _mainKeys;
+		private Dictionary<KeyCode, ImGuiKey> _mainKeys = new();
 
 		public InputManagerPlatform(CursorShapesAsset cursorShapes, IniSettingsAsset iniSettings) :
 			base(cursorShapes, iniSettings)
@@ -47,43 +48,45 @@ namespace UImGui.Platform
 		private void SetupKeyboard(ImGuiIOPtr io)
 		{
 			// Map and store new keys by assigning io.KeyMap and setting value of array
-			_mainKeys = new int[] {
-				io.KeyMap[(int)ImGuiKey.A] = (int)KeyCode.A, // For text edit CTRL+A: select all.
-				io.KeyMap[(int)ImGuiKey.C] = (int)KeyCode.C, // For text edit CTRL+C: copy.
-				io.KeyMap[(int)ImGuiKey.V] = (int)KeyCode.V, // For text edit CTRL+V: paste.
-				io.KeyMap[(int)ImGuiKey.X] = (int)KeyCode.X, // For text edit CTRL+X: cut.
-				io.KeyMap[(int)ImGuiKey.Y] = (int)KeyCode.Y, // For text edit CTRL+Y: redo.
-				io.KeyMap[(int)ImGuiKey.Z] = (int)KeyCode.Z, // For text edit CTRL+Z: undo.
+			_mainKeys = new() {
+				{ KeyCode.A, ImGuiKey.A }, // For text edit CTRL+A: select all.
+				{ KeyCode.C, ImGuiKey.C }, // For text edit CTRL+C: copy.
+				{ KeyCode.V, ImGuiKey.V }, // For text edit CTRL+V: paste.
+				{ KeyCode.X, ImGuiKey.X }, // For text edit CTRL+X: cut.
+				{ KeyCode.Y, ImGuiKey.Y }, // For text edit CTRL+Y: redo.
+				{ KeyCode.Z, ImGuiKey.Z }, // For text edit CTRL+Z: undo.
 
-				io.KeyMap[(int)ImGuiKey.Tab] = (int)KeyCode.Tab,
+				{ KeyCode.Tab, ImGuiKey.Tab },
 
-				io.KeyMap[(int)ImGuiKey.LeftArrow] = (int)KeyCode.LeftArrow,
-				io.KeyMap[(int)ImGuiKey.RightArrow] = (int)KeyCode.RightArrow,
-				io.KeyMap[(int)ImGuiKey.UpArrow] = (int)KeyCode.UpArrow,
-				io.KeyMap[(int)ImGuiKey.DownArrow] = (int)KeyCode.DownArrow,
+				{ KeyCode.LeftArrow, ImGuiKey.LeftArrow },
+				{ KeyCode.RightArrow, ImGuiKey.RightArrow },
+				{ KeyCode.UpArrow, ImGuiKey.UpArrow },
+				{ KeyCode.DownArrow, ImGuiKey.DownArrow },
 
-				io.KeyMap[(int)ImGuiKey.PageUp] = (int)KeyCode.PageUp,
-				io.KeyMap[(int)ImGuiKey.PageDown] = (int)KeyCode.PageDown,
+				{ KeyCode.PageUp, ImGuiKey.PageUp },
+				{ KeyCode.PageDown, ImGuiKey.PageDown },
 
-				io.KeyMap[(int)ImGuiKey.Home] = (int)KeyCode.Home,
-				io.KeyMap[(int)ImGuiKey.End] = (int)KeyCode.End,
-				io.KeyMap[(int)ImGuiKey.Insert] = (int)KeyCode.Insert,
-				io.KeyMap[(int)ImGuiKey.Delete] = (int)KeyCode.Delete,
-				io.KeyMap[(int)ImGuiKey.Backspace] = (int)KeyCode.Backspace,
+				{ KeyCode.Home, ImGuiKey.Home },
+				{ KeyCode.End, ImGuiKey.End },
+				{ KeyCode.Insert, ImGuiKey.Insert },
+				{ KeyCode.Delete, ImGuiKey.Delete },
+				{ KeyCode.Backspace, ImGuiKey.Backspace },
 
-				io.KeyMap[(int)ImGuiKey.Space] = (int)KeyCode.Space,
-				io.KeyMap[(int)ImGuiKey.Escape] = (int)KeyCode.Escape,
-				io.KeyMap[(int)ImGuiKey.Enter] = (int)KeyCode.Return,
-				io.KeyMap[(int)ImGuiKey.KeyPadEnter] = (int)KeyCode.KeypadEnter,
+				{ KeyCode.Space, ImGuiKey.Space },
+				{ KeyCode.Escape, ImGuiKey.Escape },
+				{ KeyCode.Return, ImGuiKey.Enter },
+				{ KeyCode.KeypadEnter, ImGuiKey.KeypadEnter }
 			};
 		}
 
 		private void UpdateKeyboard(ImGuiIOPtr io)
 		{
-			for (int keyIndex = 0; keyIndex < _mainKeys.Length; keyIndex++)
+			foreach (var key in _mainKeys)
 			{
-				int key = _mainKeys[keyIndex];
-				io.KeysDown[key] = Input.GetKey((KeyCode)key);
+				if (Input.GetKey(key.Key))
+				{
+					io.AddKeyEvent(key.Value, true);
+				}
 			}
 
 			// Keyboard modifiers.
