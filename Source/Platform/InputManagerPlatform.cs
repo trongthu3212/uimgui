@@ -94,11 +94,42 @@ namespace UImGui.Platform
 			}
 
 			// Keyboard modifiers.
-			io.KeyShift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-			io.KeyCtrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
-			io.KeyAlt = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
-			io.KeySuper = Input.GetKey(KeyCode.LeftCommand) || Input.GetKey(KeyCode.RightCommand) ||
-				Input.GetKey(KeyCode.LeftWindows) || Input.GetKey(KeyCode.RightWindows);
+			if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+			{
+				io.AddKeyEvent(ImGuiKey.ModShift, true);
+			}
+			else
+			{
+				io.AddKeyEvent(ImGuiKey.ModShift, false);
+			}
+
+			if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+			{
+				io.AddKeyEvent(ImGuiKey.ModCtrl, true);
+			}
+			else
+			{
+				io.AddKeyEvent(ImGuiKey.ModCtrl, false);
+			}
+
+			if (Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt))
+			{
+				io.AddKeyEvent(ImGuiKey.ModAlt, true);
+			}
+			else
+			{
+				io.AddKeyEvent(ImGuiKey.ModAlt, false);
+			}
+
+			if (Input.GetKey(KeyCode.LeftCommand) || Input.GetKey(KeyCode.RightCommand) ||
+				Input.GetKey(KeyCode.LeftWindows) || Input.GetKey(KeyCode.RightWindows))
+			{
+				io.AddKeyEvent(ImGuiKey.ModSuper, true);
+			}
+			else
+			{
+				io.AddKeyEvent(ImGuiKey.ModSuper, false);
+			}
 
 			// Text input.
 			while (Event.PopEvent(_textInputEvent))
