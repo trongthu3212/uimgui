@@ -87,6 +87,10 @@ namespace UImGui.Platform
 				{
 					io.AddKeyEvent(key.Value, true);
 				}
+				else
+				{
+					io.AddKeyEvent(key.Value, false);
+				}
 			}
 
 			// Keyboard modifiers.
